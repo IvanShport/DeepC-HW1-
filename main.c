@@ -4,16 +4,18 @@
 #include <stddef.h>
 #define START_SIZE_OF_ROW 32
 #define START_SIZE_OF_TEXT 2
+#define BUFFER_FOR_INPUT 64
+#define START_MEM_FOR_INPUT 1024
 
 char* input_row(char* row_pointer);
-size_t choice_rows(char** text, const size_t size_of_text, char*** fin_text);
-char** realloc_for_text(char** text, size_t* size_of_text, const size_t size_of_row);
-char** free_not_used_mem(char** text, size_t* size_of_text, const size_t new_size);
+size_t choice_rows(char** text, size_t size_of_text, char*** fin_text);
+char** realloc_for_text(char** text, size_t* size_of_text, size_t size_of_row);
+char** free_not_used_mem(char** text, size_t* size_of_text, size_t new_size);
 char** create_text(size_t size_of_text, size_t size_of_row);
-char** find_valid_rows(char** text, const size_t size_of_text, size_t *size_of_fin_text);
-char** input_text(char** text, const size_t size_of_row, size_t* size_of_text);
+char** find_valid_rows(char** text, size_t size_of_text, size_t *size_of_fin_text);
+char** input_text(char** text, size_t size_of_row, size_t* size_of_text);
 char** init_start_text(size_t* size_of_text);
-void output_result(char** result_text, const size_t size_of_result);
+void output_result(const char** result_text, size_t size_of_result);
 void free_text(char** text, size_t size);
 
 int main() {
@@ -33,7 +35,7 @@ int main() {
         return 0;
     }
 
-    output_result(fin_text, size_of_fin_text);
+    output_result((const char**)fin_text, size_of_fin_text);
 
     free(fin_text);
     free_text(text, size_of_text);
@@ -110,9 +112,9 @@ char** input_text(char** text, const size_t size_of_row, size_t* size_of_text) {
 
 char* input_row(char* row_pointer) {
     ptrdiff_t cur_size = 0;
-    size_t empty_size = 64;
+    size_t empty_size = BUFFER_FOR_INPUT;
     size_t filled_size = 0;
-    size_t row_size = 1024;
+    size_t row_size = START_MEM_FOR_INPUT;
 
     char end_row[empty_size];
     char* temp_row = (char*)realloc(row_pointer, row_size * sizeof(char));
@@ -229,7 +231,7 @@ size_t choice_rows(char** text, const size_t size_of_text, char*** fin_text) {
     return counter_of_row;
 }
 
-void output_result(char** result_text, const size_t size_of_result) {
+void output_result(const char** result_text, const size_t size_of_result) {
     for (size_t i = 0; i < size_of_result; i++) {
         printf("%s\n", result_text[i]);
     }
