@@ -8,11 +8,14 @@
 #define START_MEM_FOR_INPUT 1024
 
 char* input_row(char* row_pointer);
-size_t choice_rows(char** text, size_t size_of_text, char*** fin_text);
+size_t choice_rows(const char** text, size_t size_of_text, char*** fin_text);
+size_t copy_row(const char** text, size_t size_of_text,
+                char*** fin_text, size_t* size_of_fin_text,
+                size_t* index_of_last_row_of_fin_text, size_t index_of_required_row_of_text);
 char** realloc_for_text(char** text, size_t* size_of_text, size_t size_of_row);
 char** free_not_used_mem(char** text, size_t* size_of_text, size_t new_size);
 char** create_text(size_t size_of_text, size_t size_of_row);
-char** find_valid_rows(char** text, size_t size_of_text, size_t *size_of_fin_text);
+char** find_valid_rows(const char** text, size_t size_of_text, size_t *size_of_fin_text);
 char** input_text(char** text, size_t size_of_row, size_t* size_of_text);
 char** init_start_text(size_t* size_of_text);
 void output_result(const char** result_text, size_t size_of_result);
@@ -28,7 +31,7 @@ int main() {
         return 0;
     }
 
-    char** fin_text = find_valid_rows(text, size_of_text, &size_of_fin_text);
+    char** fin_text = find_valid_rows((const char**)text, size_of_text, &size_of_fin_text);
     if (fin_text == NULL) {
         printf("[error]");
         free_text(text, size_of_text);
@@ -37,7 +40,7 @@ int main() {
 
     output_result((const char**)fin_text, size_of_fin_text);
 
-    free(fin_text);
+    free_text(fin_text, size_of_fin_text);
     free_text(text, size_of_text);
 
     return 0;
@@ -189,7 +192,7 @@ char** free_not_used_mem(char** text, size_t* size_of_text, const size_t new_siz
     return text;
 }
 
-char** find_valid_rows(char** text, const size_t size_of_text, size_t *size_of_fin_text) {
+char** find_valid_rows(const char** text, const size_t size_of_text, size_t *size_of_fin_text) {
     char** fin_text = create_text(*size_of_fin_text, 0);
     if (fin_text == NULL)
         return NULL;
@@ -203,7 +206,7 @@ char** find_valid_rows(char** text, const size_t size_of_text, size_t *size_of_f
     return fin_text;
 }
 
-size_t choice_rows(char** text, const size_t size_of_text, char*** fin_text) {
+size_t choice_rows(const char** text, const size_t size_of_text, char*** fin_text) {
     size_t counter_of_bracket = 0;
     size_t counter_of_row = 0;
     size_t start_size_of_fin_text = START_SIZE_OF_TEXT;
@@ -215,20 +218,47 @@ size_t choice_rows(char** text, const size_t size_of_text, char*** fin_text) {
         }
 
         if (counter_of_bracket == 0) {
-            *(*fin_text + counter_of_row) = text[i];
 
-            if (counter_of_row >= start_size_of_fin_text - 1) {
-                char** temp_text = realloc_for_text(*fin_text, &start_size_of_fin_text, 0);
-                if (temp_text == NULL)
-                    return size_of_text;
+            if (copy_row(text, size_of_text, fin_text, &start_size_of_fin_text, &counter_of_row, i) == size_of_text)
+                return size_of_text;
 
-                *fin_text = temp_text;
-            }
-            counter_of_row++;
         }
         counter_of_bracket = 0;
     }
     return counter_of_row;
+}
+
+size_t copy_row(const char** text, const size_t size_of_text,
+                char*** fin_text, size_t* size_of_fin_text,
+                size_t* index_of_last_row_of_fin_text, size_t index_of_required_row_of_text)
+{
+    char* temp_row = (char*)malloc(sizeof(char) * (strlen(text[index_of_required_row_of_text]) + 1));
+    if (temp_row == NULL) {
+        for (size_t k = 0; k < *index_of_last_row_of_fin_text; k++) {
+            free(*(*fin_text + k));
+        }
+        return size_of_text;
+    }
+    *(*fin_text + *index_of_last_row_of_fin_text) = temp_row;
+
+    memcpy(*(*fin_text + *index_of_last_row_of_fin_text),
+           text[index_of_required_row_of_text],
+           strlen(text[index_of_required_row_of_text]) + 1);
+
+    (*index_of_last_row_of_fin_text)++;
+
+    if (*index_of_last_row_of_fin_text >= *size_of_fin_text) {
+        char** temp_text = realloc_for_text(*fin_text, size_of_fin_text, 0);
+        if (temp_text == NULL) {
+            for (size_t k = 0; k < *index_of_last_row_of_fin_text; k++) {
+                free(*(*fin_text + k));
+            }
+            return size_of_text;
+        }
+
+        *fin_text = temp_text;
+    }
+    return *index_of_last_row_of_fin_text;
 }
 
 void output_result(const char** result_text, const size_t size_of_result) {
